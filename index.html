@@ -315,7 +315,7 @@
     </div>
 
     <div class="chart-wrapper">
-      <div class="chart-box">
+      <div class="chart-box" id="chart-box">
         <!-- 象限背景 -->
         <div class="quadrant q1"></div>
         <div class="quadrant q2"></div>
@@ -537,6 +537,7 @@
   const btnNext = document.getElementById('btn-next')
   const resultEl = document.getElementById('result')
   const userPoint = document.getElementById('user-point')
+  const chartBox = document.getElementById('chart-box')
 
   // 显示当前题
   function showQuestion(idx) {
@@ -570,15 +571,17 @@
   })
 
   // 计算结果
+  // 计算结果
   function calcResult() {
     let anxiety = 0
     let avoid = 0
+    // 累加所有答案的焦虑、回避分值
     answers.forEach(a => {
       anxiety += a.anxiety
       avoid += a.avoid
     })
 
-    // 归一化到 -1 到 1 的范围
+    // 归一化到 -1 到 1 的范围（总分范围：-16 ~ +16）
     const anxNorm = anxiety / 16
     const avoNorm = avoid / 16
 
@@ -592,23 +595,9 @@
     document.getElementById('result-tag').textContent = type.tag
     document.getElementById('result-desc').innerHTML = desc
 
-    // 计算用户点位置 - 限制在图表范围内
-    const chartBox = document.querySelector('.chart-box')
-    const w = chartBox.offsetWidth
-    const h = chartBox.offsetHeight
-
-    // 归一化 -1~1 → 0~1，原点在中心
-    // 限制范围：10px 到 w-10px / h-10px，确保圆点完全显示
-    const xRaw = (avoNorm + 1) / 2 * w
-    const yRaw = (1 - anxNorm) / 2 * h
-
-    // 限制红点位置，避免超出图表
-    const x = Math.max(10, Math.min(w - 10, xRaw))
-    const y = Math.max(10, Math.min(h - 10, yRaw))
-
-    userPoint.style.left = x + 'px'
-    userPoint.style.top = y + 'px'
-    userPoint.style.display = 'block'
+    // ！！！关键修复：先显示结果页，再计算坐标 ！！！
+    // 先把结果页显示出来
+    resultEl.style.display = 'block'
 
     // 隐藏测试页面元素
     progressText.style.display = 'none'
@@ -617,7 +606,37 @@
     mainSubtitle.style.display = 'none'
     document.querySelectorAll('.question').forEach(q => q.style.display = 'none')
     btnNext.style.display = 'none'
-    resultEl.style.display = 'block'
+
+    // 强制浏览器重绘，确保容器已经渲染
+    setTimeout(() => {
+      // 获取chart-box的宽高
+      let w = chartBox.offsetWidth
+      let h = chartBox.offsetHeight
+
+      // 如果获取失败，使用默认值
+      if (w === 0 || h === 0) {
+        w = 656; // 720px容器减去左右padding 32*2 ≈ 656
+        h = 360; // CSS设定的固定高度
+      }
+
+      // 原点在中心
+      const centerX = w / 2
+      const centerY = h / 2
+
+      // 计算偏移范围：留出20px边距
+      const maxOffsetX = (w / 2) - 20
+      const maxOffsetY = (h / 2) - 20
+
+      // 修正后的坐标计算
+      const pointX = centerX - (avoNorm * maxOffsetX)  // 高回避（正数）向左移动
+      const pointY = centerY - (anxNorm * maxOffsetY)  // 高焦虑（正数）向上移动
+
+      // 应用坐标到红点
+      userPoint.style.left = `${pointX}px`
+      userPoint.style.top = `${pointY}px`
+      userPoint.style.display = 'block'
+      console.log('红点位置:', pointX, pointY, '得分:', anxNorm, avoNorm) // 调试用
+    }, 50) // 稍微延迟一下确保渲染完成
   }
 
   // 判断依恋类型（包括混合类型）
@@ -867,6 +886,7 @@
     showQuestion(0)
   }
 
+  // 初始化显示第一题
   showQuestion(0)
 </script>
 </body>
