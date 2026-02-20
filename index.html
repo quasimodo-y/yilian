@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>成人依恋类型测试 · 专业版</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", sans-serif;
+  }
+  body {
+    background: #f7f8fa;
+    color: #333;
+    line-height: 1.6;
+    padding: 20px;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+  }
+  .progress-bar {
+    height: 6px;
+    background: #eaeaea;
+    border-radius: 99px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #5183f4;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .progress-text {
+    text-align: right;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: #222;
+  }
+  .subtitle {
+    color: #666;
+    margin-bottom: 32px;
+    font-size: 15px;
+  }
+  .question {
+    margin-bottom: 28px;
+    display: none;
+  }
+  .question.active {
+    display: block;
+  }
+  .question-text {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 16px;
+  }
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .option {
+    padding: 14px 16px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 15px;
+  }
+  .option:hover {
+    border-color: #5183f4;
+    background: #f5f7ff;
+  }
+  .option.selected {
+    background: #5183f4;
+    color: white;
+    border-color: #5183f4;
+  }
+  .btn-next {
+    margin-top: 20px;
+    padding: 14px;
+    width: 100%;
+    background: #5183f4;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    display: none;
+  }
+  .btn-next.show {
+    display: block;
+  }
+
+  /* --- 结果页样式 --- */
+  .result {
+    display: none;
+    animation: fadeIn 0.5s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .result-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .result-type {
+    font-size: 28px;
+    color: #5183f4;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .result-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #f0f4ff;
+    color: #5183f4;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .chart-wrapper {
+    background: #fff;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    margin-bottom: 24px;
+  }
+  .chart-box {
+    width: 100%;
+    height: 360px;
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  /* 坐标轴样式 */
+  .axis-x {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #333;
+  }
+  .axis-y {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 2px;
+    height: 100%;
+    background: #333;
+  }
+  .axis-arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+  }
+  .axis-arrow-x-right {
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    border-width: 6px 0 6px 10px;
+    border-color: transparent transparent transparent #333;
+  }
+  .axis-arrow-y-top {
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 6px 10px 6px;
+    border-color: transparent transparent #333 transparent;
+  }
+  /* 移除原点样式 */
+  .origin {
+    display: none;
+  }
+  /* 移除所有轴上的汉字标签 */
+  .axis-label-x,
+  .axis-label-y,
+  .axis-label-x-left,
+  .axis-label-x-right,
+  .axis-label-y-top,
+  .axis-label-y-bottom {
+    display: none;
+  }
+  /* 象限背景色 */
+  .quadrant {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    opacity: 0.1;
+  }
+  .q1 { /* 安全型 - 浅蓝色 */
+    top: 0;
+    left: 50%;
+    background-color: #5183f4;
+  }
+  .q2 { /* 焦虑型 - 浅粉色 */
+    top: 0;
+    left: 0;
+    background-color: #ff85a2;
+  }
+  .q3 { /* 恐惧型 - 浅橙色 */
+    top: 50%;
+    left: 0;
+    background-color: #ffc069;
+  }
+  .q4 { /* 回避型 - 浅绿色 */
+    top: 50%;
+    left: 50%;
+    background-color: #73d13d;
+  }
+  /* 象限标签 */
+  .quadrant-label {
+    position: absolute;
+    font-size: 14px;
+    color: #555;
+    text-align: center;
+    z-index: 1;
+  }
+  .q1-label { top: 25%; left: 75%; transform: translate(-50%, -50%); }
+  .q2-label { top: 25%; left: 25%; transform: translate(-50%, -50%); }
+  .q3-label { top: 75%; left: 25%; transform: translate(-50%, -50%); }
+  .q4-label { top: 75%; left: 75%; transform: translate(-50%, -50%); }
+  /* 用户点 - 确保不超出图表范围 */
+  .user-point {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: #ff4d4f;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    box-shadow: 0 0 0 4px rgba(255, 77, 79, 0.2);
+    z-index: 2;
+  }
+  /* 图表下方说明文字 */
+  .chart-note {
+    margin-top: 16px;
+    font-size: 13px;
+    color: #666;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .result-content {
+    background: #f9fafb;
+    border-radius: 16px;
+    padding: 24px;
+    line-height: 1.8;
+    color: #333;
+    font-size: 15px;
+  }
+  /* 修改小标题颜色为结果标题的蓝色 #5183f4 */
+  .result-content h4 {
+    color: #5183f4;
+    margin-bottom: 12px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .result-content p {
+    margin-bottom: 16px;
+  }
+  .result-content p:last-child {
+    margin-bottom: 0;
+  }
+  .btn-restart {
+    width: 100%;
+    padding: 14px;
+    background: #5183f4;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background 0.3s;
+  }
+  .btn-restart:hover {
+    background: #4072e3;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="progress-text" id="progress-text">当前进度：<span id="current-num">0</span>/16</div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+
+  <h1 id="main-title">成人依恋类型测试</h1>
+  <div class="subtitle" id="main-subtitle">根据你在亲密关系中的真实反应选择，结果更准确。</div>
+
+  <div id="questions"></div>
+  <button class="btn-next" id="btn-next">下一题</button>
+
+  <!-- --- 结果页 --- -->
+  <div class="result" id="result">
+    <div class="result-header">
+      <div class="result-type" id="result-type"></div>
+      <div class="result-tag" id="result-tag"></div>
+    </div>
+
+    <div class="chart-wrapper">
+      <div class="chart-box">
+        <!-- 象限背景 -->
+        <div class="quadrant q1"></div>
+        <div class="quadrant q2"></div>
+        <div class="quadrant q3"></div>
+        <div class="quadrant q4"></div>
+
+        <div class="axis-x"></div>
+        <div class="axis-arrow axis-arrow-x-right"></div>
+        <div class="axis-y"></div>
+        <div class="axis-arrow axis-arrow-y-top"></div>
+        <div class="origin">O</div>
+
+        <div class="quadrant-label q1-label">
+          <div>安全型</div>
+          <div style="font-size:12px;color:#666;">低焦虑·低回避</div>
+        </div>
+        <div class="quadrant-label q2-label">
+          <div>焦虑型</div>
+          <div style="font-size:12px;color:#666;">高焦虑·低回避</div>
+        </div>
+        <div class="quadrant-label q3-label">
+          <div>恐惧型</div>
+          <div style="font-size:12px;color:#666;">高焦虑·高回避</div>
+        </div>
+        <div class="quadrant-label q4-label">
+          <div>回避型</div>
+          <div style="font-size:12px;color:#666;">低焦虑·高回避</div>
+        </div>
+
+        <div class="user-point" id="user-point"></div>
+      </div>
+      <!-- 图表下方说明 -->
+      <div class="chart-note">
+        <div>X轴：从左到右，回避 → 依赖（箭头方向代表依赖特质更强烈）</div>
+        <div>Y轴：从下到上，安全 → 焦虑（箭头方向代表焦虑特质更强烈）</div>
+      </div>
+    </div>
+
+    <div class="result-content" id="result-desc"></div>
+    <button class="btn-restart" onclick="restart()">重新测试</button>
+  </div>
+</div>
+
+<script>
+  const total = 16
+  let current = 0
+  let answers = Array(total).fill(null)
+
+  // 焦虑、回避 计分：+1=偏焦虑/偏回避，-1=相反
+  const questions = [
+    {
+      text: "1. 伴侣很久没回消息，你正在做自己的事，你会？",
+      options: [
+        { text: "继续做自己的事，相信他忙完会回", anxiety: -1, avoid: -1 },
+        { text: "有点不安，忍不住想他是不是不在乎我", anxiety: 1, avoid: -1 },
+        { text: "无所谓，我也不想被打扰", anxiety: -1, avoid: 1 },
+        { text: "心里很慌，但又不想主动发消息", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "2. 吵架后，伴侣想抱抱你和好，你会？",
+      options: [
+        { text: "愿意靠近，一起沟通", anxiety: -1, avoid: -1 },
+        { text: "立刻心软，很怕失去他", anxiety: 1, avoid: -1 },
+        { text: "推开，想自己冷静", anxiety: -1, avoid: 1 },
+        { text: "想靠近又害怕，身体很僵硬", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "3. 你愿意在伴侣面前哭、暴露脆弱吗？",
+      options: [
+        { text: "愿意，这很正常", anxiety: -1, avoid: -1 },
+        { text: "很想被安慰，希望他一直陪着", anxiety: 1, avoid: -1 },
+        { text: "不愿意，不想让人看到我软弱", anxiety: -1, avoid: 1 },
+        { text: "想被安慰，但又怕被嫌弃", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "4. 伴侣对你表达强烈爱意，你会？",
+      options: [
+        { text: "自然接受并回应", anxiety: -1, avoid: -1 },
+        { text: "非常开心，但又怕这感觉不长久", anxiety: 1, avoid: -1 },
+        { text: "有点尴尬，希望别太腻", anxiety: -1, avoid: 1 },
+        { text: "开心但紧张，不敢完全相信", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "5. 伴侣要和朋友出去玩，不带上你，你会？",
+      options: [
+        { text: "支持，每个人都有空间", anxiety: -1, avoid: -1 },
+        { text: "失落，担心他玩着就忽略我", anxiety: 1, avoid: -1 },
+        { text: "轻松，正好我也想独处", anxiety: -1, avoid: 1 },
+        { text: "不舒服，但我不会说出来", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "6. 你觉得“完全信任一个人”是？",
+      options: [
+        { text: "可以做到，也很正常", anxiety: -1, avoid: -1 },
+        { text: "我很想，但我总做不到", anxiety: 1, avoid: -1 },
+        { text: "没必要，人最可靠的是自己", anxiety: -1, avoid: 1 },
+        { text: "想信任又不敢，很矛盾", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "7. 你生气时最常出现的模式是？",
+      options: [
+        { text: "说清楚感受，然后和好", anxiety: -1, avoid: -1 },
+        { text: "情绪很激动，怕他离开", anxiety: 1, avoid: -1 },
+        { text: "沉默不理，自己消化", anxiety: -1, avoid: 1 },
+        { text: "一边生气一边假装没事", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "8. 你希望亲密关系的距离是？",
+      options: [
+        { text: "温暖亲近，又各自独立", anxiety: -1, avoid: -1 },
+        { text: "越近越好，时刻黏在一起", anxiety: 1, avoid: -1 },
+        { text: "保持距离，不要太侵入", anxiety: -1, avoid: 1 },
+        { text: "想近又怕痛，想远又孤单", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "9. 伴侣情绪低落时，你会？",
+      options: [
+        { text: "耐心陪伴，适度安慰", anxiety: -1, avoid: -1 },
+        { text: "非常紧张，拼命哄他", anxiety: 1, avoid: -1 },
+        { text: "不知道怎么做，想躲开", anxiety: -1, avoid: 1 },
+        { text: "想帮但怕做错，不敢靠近", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "10. 你内心最深处的恋爱恐惧是？",
+      options: [
+        { text: "没有特别恐惧，相信彼此", anxiety: -1, avoid: -1 },
+        { text: "被抛弃、不被爱", anxiety: 1, avoid: -1 },
+        { text: "被束缚、失去自由", anxiety: -1, avoid: 1 },
+        { text: "既怕被抛弃又怕被控制", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "11. 你对“承诺”的感受是？",
+      options: [
+        { text: "稳定安心，愿意负责", anxiety: -1, avoid: -1 },
+        { text: "渴望承诺，怕他不给", anxiety: 1, avoid: -1 },
+        { text: "压力大，不想被绑定", anxiety: -1, avoid: 1 },
+        { text: "想要又不敢要，很纠结", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "12. 你在关系里更容易？",
+      options: [
+        { text: "稳定舒服，不粘不作", anxiety: -1, avoid: -1 },
+        { text: "敏感多疑，很需要安全感", anxiety: 1, avoid: -1 },
+        { text: "冷淡独立，不太表达", anxiety: -1, avoid: 1 },
+        { text: "忽冷忽热，自己也控制不住", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "13. 关系变淡时，你第一反应是？",
+      options: [
+        { text: "沟通看看问题在哪", anxiety: -1, avoid: -1 },
+        { text: "恐慌，拼命挽回", anxiety: 1, avoid: -1 },
+        { text: "接受，慢慢退出", anxiety: -1, avoid: 1 },
+        { text: "假装无所谓，夜里很难过", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "14. 你觉得自己在爱情里是？",
+      options: [
+        { text: "成熟稳定的人", anxiety: -1, avoid: -1 },
+        { text: "很缺爱的人", anxiety: 1, avoid: -1 },
+        { text: "很独立不需要太多爱", anxiety: -1, avoid: 1 },
+        { text: "又缺爱又不敢靠近", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "15. 当你很想对方时，你通常会？",
+      options: [
+        { text: "自然表达，不焦虑", anxiety: -1, avoid: -1 },
+        { text: "立刻找他，怕他不想我", anxiety: 1, avoid: -1 },
+        { text: "忍着不说，自己消化", anxiety: -1, avoid: 1 },
+        { text: "想找又不敢，反复纠结", anxiety: 1, avoid: 1 }
+      ]
+    },
+    {
+      text: "16. 如果用一句话形容你的亲密模式：",
+      options: [
+        { text: "我敢爱，也不怕失去", anxiety: -1, avoid: -1 },
+        { text: "我很怕失去，所以很用力", anxiety: 1, avoid: -1 },
+        { text: "我不太需要，也不太投入", anxiety: -1, avoid: 1 },
+        { text: "我想靠近，却又不敢敞开", anxiety: 1, avoid: 1 }
+      ]
+    }
+  ]
+
+  // 渲染题目
+  const qEl = document.getElementById('questions')
+  questions.forEach((q, i) => {
+    const div = document.createElement('div')
+    div.className = 'question'
+    div.dataset.index = i
+    div.innerHTML = `
+      <div class="question-text">${q.text}</div>
+      <div class="options">
+        ${q.options.map((opt, oi) => `
+          <div class="option" data-idx="${oi}">${opt.text}</div>
+        `).join('')}
+      </div>
+    `
+    qEl.appendChild(div)
+  })
+
+  const progressNum = document.getElementById('current-num')
+  const progressFill = document.getElementById('progress-fill')
+  const progressText = document.getElementById('progress-text')
+  const mainTitle = document.getElementById('main-title')
+  const mainSubtitle = document.getElementById('main-subtitle')
+  const btnNext = document.getElementById('btn-next')
+  const resultEl = document.getElementById('result')
+  const userPoint = document.getElementById('user-point')
+
+  // 显示当前题
+  function showQuestion(idx) {
+    document.querySelectorAll('.question').forEach(q => q.classList.remove('active'))
+    document.querySelectorAll('.question')[idx].classList.add('active')
+    current = idx
+    progressNum.textContent = idx + 1
+    progressFill.style.width = ((idx + 1) / total * 100) + '%'
+    btnNext.classList.toggle('show', answers[idx] != null)
+  }
+
+  // 选择选项
+  qEl.addEventListener('click', e => {
+    if (!e.target.classList.contains('option')) return
+    const q = e.target.closest('.question')
+    const idx = +q.dataset.index
+    const oi = +e.target.dataset.idx
+    answers[idx] = questions[idx].options[oi]
+    q.querySelectorAll('.option').forEach(o => o.classList.remove('selected'))
+    e.target.classList.add('selected')
+    btnNext.classList.add('show')
+  })
+
+  // 下一题
+  btnNext.addEventListener('click', () => {
+    if (current + 1 < total) {
+      showQuestion(current + 1)
+    } else {
+      calcResult()
+    }
+  })
+
+  // 计算结果
+  function calcResult() {
+    let anxiety = 0
+    let avoid = 0
+    answers.forEach(a => {
+      anxiety += a.anxiety
+      avoid += a.avoid
+    })
+
+    // 归一化到 -1 到 1 的范围
+    const anxNorm = anxiety / 16
+    const avoNorm = avoid / 16
+
+    // 判断依恋类型
+    const type = determineAttachmentType(anxNorm, avoNorm)
+
+    // 生成解读文案
+    const desc = generateInterpretation(type, anxNorm, avoNorm)
+
+    document.getElementById('result-type').textContent = type.name
+    document.getElementById('result-tag').textContent = type.tag
+    document.getElementById('result-desc').innerHTML = desc
+
+    // 计算用户点位置 - 限制在图表范围内
+    const chartBox = document.querySelector('.chart-box')
+    const w = chartBox.offsetWidth
+    const h = chartBox.offsetHeight
+
+    // 归一化 -1~1 → 0~1，原点在中心
+    // 限制范围：10px 到 w-10px / h-10px，确保圆点完全显示
+    const xRaw = (avoNorm + 1) / 2 * w
+    const yRaw = (1 - anxNorm) / 2 * h
+
+    // 限制红点位置，避免超出图表
+    const x = Math.max(10, Math.min(w - 10, xRaw))
+    const y = Math.max(10, Math.min(h - 10, yRaw))
+
+    userPoint.style.left = x + 'px'
+    userPoint.style.top = y + 'px'
+    userPoint.style.display = 'block'
+
+    // 隐藏测试页面元素
+    progressText.style.display = 'none'
+    progressFill.parentElement.style.display = 'none'
+    mainTitle.style.display = 'none'
+    mainSubtitle.style.display = 'none'
+    document.querySelectorAll('.question').forEach(q => q.style.display = 'none')
+    btnNext.style.display = 'none'
+    resultEl.style.display = 'block'
+  }
+
+  // 判断依恋类型（包括混合类型）
+  function determineAttachmentType(anx, avo) {
+    const threshold = 0.3
+
+    if (Math.abs(anx) < threshold && Math.abs(avo) < threshold) {
+      return {
+        name: '安全型依恋',
+        tag: '低焦虑·低回避',
+        base: 'secure'
+      }
+    } else if (anx > threshold && avo < -threshold) {
+      return {
+        name: '焦虑型依恋',
+        tag: '高焦虑·低回避',
+        base: 'anxious'
+      }
+    } else if (anx > threshold && avo > threshold) {
+      return {
+        name: '恐惧型依恋',
+        tag: '高焦虑·高回避',
+        base: 'fearful'
+      }
+    } else if (anx < -threshold && avo > threshold) {
+      return {
+        name: '回避型依恋',
+        tag: '低焦虑·高回避',
+        base: 'avoidant'
+      }
+    } else if (anx > threshold && Math.abs(avo) <= threshold) {
+      return {
+        name: '焦虑-安全混合依恋',
+        tag: '高焦虑·中回避',
+        base: 'anxious_secure'
+      }
+    } else if (avo > threshold && Math.abs(anx) <= threshold) {
+      return {
+        name: '回避-安全混合依恋',
+        tag: '中焦虑·高回避',
+        base: 'avoidant_secure'
+      }
+    } else if (anx > threshold && avo > threshold && Math.abs(anx - avo) < threshold) {
+      return {
+        name: '焦虑-恐惧混合依恋',
+        tag: '高焦虑·高回避',
+        base: 'anxious_fearful'
+      }
+    } else if (avo > threshold && anx > threshold && Math.abs(anx - avo) < threshold) {
+      return {
+        name: '回避-恐惧混合依恋',
+        tag: '高焦虑·高回避',
+        base: 'avoidant_fearful'
+      }
+    } else {
+      return {
+        name: '复合型依恋',
+        tag: '中焦虑·中回避',
+        base: 'complex'
+      }
+    }
+  }
+
+  // 生成共情式解读文案（500字+，无emoji）
+  function generateInterpretation(type, anx, avo) {
+    let interpretation = ''
+
+    switch(type.base) {
+      case 'secure':
+        interpretation = `
+          <h4>依恋特点</h4>
+          <p>你在亲密关系中展现出一种难得的稳定与从容。你能够自然地靠近他人，也能坦然地保持自我，既不害怕被抛弃，也不抗拒亲密。你相信自己值得被爱，也相信伴侣的真诚，这种内在的安全感让你在关系中像一棵深深扎根的树，无论外界如何变化，都能保持自己的姿态。你不会因为对方的一次晚归而彻夜难眠，也不会因为暂时的分离而感到恐慌，因为你知道，真正的连接不是靠时刻捆绑来维持的。</p>
+
+          <h4>可能的成因</h4>
+          <p>你大概率成长在一个充满安全感的环境中。在你童年时期，父母或其他重要他人能够给予你稳定、及时的情感回应，当你哭泣时有人安抚，当你探索时有人支持。这种“被看见、被回应”的经历，让你从小就形成了“我是可爱的，世界是可靠的”的核心信念。你知道，即使偶尔犯错或表现不佳，也不会被轻易抛弃，这种底气是你成年后健康依恋的基石。</p>
+
+          <h4>你的优势</h4>
+          <p>你是伴侣眼中最理想的爱人。你情绪稳定，善于沟通，能够清晰地表达自己的需求，也能耐心地倾听对方的感受。你不会用“冷战”或“作闹”来测试对方的爱意，而是选择坦诚和尊重。你既能在对方需要时给予坚实的支持，也能在对方独立时给予充分的空间。和你在一起，伴侣会感到被理解、被接纳，而不是被控制或被消耗。</p>
+
+          <h4>关系中的挑战</h4>
+          <p>有时，你可能会因为过于“懂事”而忽略了自己的感受。当伴侣的情绪需求超出了你的承受范围，或者关系中出现了明显的不对等时，你可能会选择隐忍和妥协，而不是及时止损。此外，当你遇到焦虑型或回避型的伴侣时，你可能会感到困惑和疲惫，因为对方的不安全感或疏离感，会不断挑战你对关系的信任。</p>
+
+          <h4>给你的建议</h4>
+          <p>继续保持这份从容和信任，但也要学会设立边界。好的关系是双向奔赴，而不是单方面的付出。当你感到疲惫或委屈时，不必强撑，坦诚地告诉对方你的感受。同时，也要警惕那些试图用“爱”的名义来控制你的人，真正的爱应该是让你成为更好的自己，而不是让你失去自我。记住，你的安全感从来都不依赖于任何人，它早已深深扎根在你的内心。</p>
+        `
+        break
+      case 'anxious':
+        interpretation = `
+          <h4>依恋特点</h4>
+          <p>你在亲密关系中像一个时刻警惕的哨兵，对任何细微的变化都异常敏感。你极度渴望亲密和确认，一句冷淡的话、一个未接的电话，都可能在你心里掀起惊涛骇浪。你会反复回想对方的每一个表情、每一句话，试图从中找到“他还爱我”的证据。你害怕被抛弃，所以你会用各种方式来测试对方的爱意，比如故意生气、冷战，或者过度付出，希望对方能主动靠近你，给你想要的安全感。</p>
+
+          <h4>可能的成因</h4>
+          <p>你的成长经历中，可能有过被忽视、被抛弃或回应不稳定的时刻。也许在你小时候，父母的情绪阴晴不定，有时对你百般宠爱，有时又对你冷漠疏离；也许你曾经历过重要他人的突然离开，让你对“失去”产生了深深的恐惧。这些经历让你形成了“我必须紧紧抓住，才能不被丢下”的生存策略，你相信，只有通过不断的确认和控制，才能维持一段关系。</p>
+
+          <h4>你的优势</h4>
+          <p>你拥有惊人的共情能力和感知力，能敏锐地捕捉到伴侣的情绪变化。你爱得深沉、热烈，愿意为关系付出一切，这种纯粹和执着是非常珍贵的。你能轻易地理解对方的痛苦和脆弱，并用温暖和关怀去治愈他们。在关系中，你是那个最投入、最忠诚的人，你会把对方的需求放在自己的前面，甚至不惜牺牲自己的利益。</p>
+
+          <h4>关系中的挑战</h4>
+          <p>你的“作”和“粘人”，本质上是在呼救。你希望通过这些极端的方式，让对方看到你的恐惧和不安。但遗憾的是，大多数时候，伴侣感受到的不是你的脆弱，而是你的控制和压力。他们会感到窒息，想要逃离，而你的恐惧又会因为他们的逃离而加剧，形成一个“越抓越空”的恶性循环。你不是在爱，而是在通过爱来填补内心的空洞。</p>
+
+          <h4>给你的建议</h4>
+          <p>试着把安全感的来源从“他是否爱我”转向“我是否值得被爱”。每天给自己一些独处的时间，培养一项能让你沉浸其中的爱好，比如阅读、绘画、运动。当你把注意力从对方身上收回来，开始关注自己的成长和快乐时，你会发现，你本身就足够好，不需要通过别人的回应来证明。同时，也要学会用更成熟的方式表达自己的需求，比如直接告诉对方“我需要你多陪陪我”，而不是用冷战或生气来暗示。</p>
+        `
+        break
+      case 'avoidant':
+        interpretation = `
+          <h4>依恋特点</h4>
+          <p>你在亲密关系中像一只背着壳的蜗牛，用独立和冷漠筑起一道高墙。你害怕被束缚，所以刻意保持距离；你不擅长表达脆弱，所以假装一切都无所谓。当伴侣向你靠近时，你会本能地后退；当对方表达爱意时，你会感到尴尬和不适。你更愿意把时间花在工作、爱好或朋友身上，而不是和伴侣腻在一起。你相信，只有保持独立，才能避免受到伤害。</p>
+
+          <h4>可能的成因</h4>
+          <p>你可能从小被教育“要坚强，不能哭”，或者在表达情感时遭到过嘲笑或拒绝。也许在你小时候，当你向父母展示脆弱时，他们会告诉你“这有什么好哭的”或者“自己的事情自己做”。这些经历让你相信，依赖是软弱的，只有自己才最可靠。你学会了把所有的情绪都藏在心里，用冷漠来保护自己，久而久之，你甚至忘记了如何去爱和被爱。</p>
+
+          <h4>你的优势</h4>
+          <p>你非常独立、强大，能在没有他人支持的情况下把生活打理得井井有条。你给伴侣极大的自由，从不给对方压力，也不会用自己的需求去绑架对方。和你在一起，伴侣会感到轻松和自在，因为你不会要求他们时刻陪伴，也不会对他们的生活指手画脚。你是一个很好的朋友，但可能不是一个很好的爱人。</p>
+
+          <h4>关系中的挑战</h4>
+          <p>你的“高冷”会让伴侣感到被拒绝和不被需要。他们会觉得，你并不需要他们，也不在乎他们的感受。久而久之，再热烈的爱也会被冷却，再坚定的人也会选择离开。你看似在保护自己，实则在隔绝爱。你用冷漠筑起的高墙，挡住了伤害，也挡住了温暖。</p>
+
+          <h4>给你的建议</h4>
+          <p>尝试从小事做起，比如主动分享一件今天发生的小事，或者在伴侣难过时，试着说一句“我在”。亲密并不意味着失去自由，而是找到一个可以安心停靠的港湾。当你允许自己脆弱一点，允许自己依赖对方一点时，你会发现，爱并没有那么可怕。同时，也要学会识别自己的情绪，当你感到想要逃离时，问问自己，你是真的需要空间，还是在害怕亲密。</p>
+        `
+        break
+      case 'fearful':
+        interpretation = `
+          <h4>依恋特点</h4>
+          <p>你的内心是一个矛盾的战场：一边是对爱极致的渴望，一边是对被伤害的极致恐惧。你就像在冰与火之间反复横跳，想靠近又怕被灼伤，想逃离又怕被孤单吞噬。当伴侣向你表达爱意时，你会感到一丝甜蜜，但更多的是不安和怀疑；当对方稍微冷淡一点时，你又会陷入深深的绝望和自我否定。你既渴望被拯救，又不相信有人能真正拯救你。</p>
+
+          <h4>可能的成因</h4>
+          <p>你很可能经历过深刻的背叛或创伤，让你对人性产生了深深的不信任。也许在你小时候，你曾被最亲近的人欺骗或伤害；也许你曾在一段关系中付出了全部，却被无情地抛弃。这些经历让你形成了“爱就是伤害”的信念，你既渴望爱，又害怕爱，因为每一次靠近，都意味着再一次承受被伤害的风险。</p>
+
+          <h4>你的优势</h4>
+          <p>你比任何人都更懂得爱的珍贵，也比任何人都更能洞察人心。你拥有深刻的自我觉察能力，能清晰地看到自己内心的恐惧和矛盾。你是一个非常细腻、敏感的人，能轻易地理解他人的痛苦和脆弱，这种能力让你成为一个很好的倾听者和治愈者。</p>
+
+          <h4>关系中的挑战</h4>
+          <p>你的忽冷忽热会让伴侣无所适从。他们会觉得，你就像一个谜，永远猜不透你的心思。当他们靠近时，你推开；当他们离开时，你又渴望他们回来。这种反复无常会耗尽他们的耐心和爱意，最终选择离开。而每一次离开，又会加深你“果然没人会爱我”的信念，形成一个痛苦的闭环。</p>
+
+          <h4>给你的建议</h4>
+          <p>疗愈需要时间，不必强迫自己立刻改变。先学会和自己的恐惧共处，告诉自己“我害怕，但我依然选择尝试”。找一个安全的人，比如心理咨询师或值得信赖的朋友，慢慢重建对关系的信任。同时，也要学会接纳自己的不完美，你不需要成为一个完美的爱人，你只需要成为真实的自己。记住，真正的爱不是没有恐惧，而是即使恐惧，依然选择相信。</p>
+        `
+        break
+      case 'anxious_secure':
+        interpretation = `
+          <h4>依恋特点</h4>
+          <p>你是焦虑型和安全型的混合体。大部分时候，你能像安全型一样从容自信，相信自己值得被爱，也相信伴侣的真诚。你能自然地表达自己的需求，也能耐心地倾听对方的感受。但在某些触发点，比如被忽视、被否定或感受到关系中的不稳定时，你内心的焦虑感会瞬间被点燃，你会变得敏感、多疑，甚至做出一些事后后悔的冲动行为。</p>
+
+          <h4>可能的成因</h4>
+          <p>你的成长环境总体是安全的，但可能在某些关键时期（如青春期）经历过情感波动或不稳定的关系。也许你曾有过一段让你刻骨铭心的初恋，最终以分手告终；也许你曾在家庭中感受到过父母的争吵和疏离。这些经历留下了一些未被处理的情绪按钮，当类似的场景再次出现时，它们就会被触发，让你瞬间回到过去的恐惧中。</p>
+
+          <h4>你的优势</h4>
+          <p>你既有安全型的稳定，又有焦虑型的深刻。你能理解伴侣的情绪，也能在大部分时候保持理性。你不会像纯粹的焦虑型那样过度依赖和控制，也不会像纯粹的安全型那样过于“懂事”而忽略自己的感受。你是一个非常有弹性的人，能在不同的关系中调整自己的状态。</p>
+
+          <h4>关系中的挑战</h4>
+          <p>当你的焦虑按钮被触发时，你可能会做出一些破坏关系的行为。比如，你会突然变得冷漠、生气，或者用冷战来惩罚对方。这些行为会让伴侣感到困惑和受伤，他们会觉得，你变了，不再是那个他们熟悉的人。而你自己，也会因为这些冲动的行为而感到内疚和自责。</p>
+
+          <h4>给你的建议</h4>
+          <p>识别并记录下你的焦虑触发点，下次再遇到类似情况时，先深呼吸，给自己10分钟冷静期。在这10分钟里，问问自己，我现在的情绪是源于当下的事情，还是过去的创伤？记住，你已经拥有了稳定的内核，那些焦虑只是过去的回声，不是现在的真相。同时，也要和伴侣坦诚地沟通你的情绪按钮，让他们知道，当你焦虑时，你需要的是安抚和理解，而不是指责和冷战。</p>
+        `
+        break
+      case 'avoidant_secure':
+        interpretation = `
+          <h4>依恋特点</h4>
+          <p>你是回避型和安全型的混合体。你享受亲密，但也极度重视个人空间。你能建立健康的关系，和伴侣分享生活中的喜怒哀乐，但在关系过于深入时，你会本能地想要后退。你不喜欢被束缚，也不喜欢被对方的需求绑架。你相信，好的关系应该是两个独立的人，因为相爱而选择在一起，而不是因为需要而捆绑在一起。</p>
+
+          <h4>可能的成因</h4>
+          <p>你可能成长在一个鼓励独立的家庭，让你习惯了自己解决问题。你的父母可能很少干涉你的生活，也很少对你表达情感，这让你形成了“自己的事情自己做”的信念。你相信爱，但不相信爱能解决所有问题。你知道，即使没有伴侣，你也能把自己的生活过得很好。</p>
+
+          <h4>你的优势</h4>
+          <p>你能在亲密和自由之间找到一个不错的平衡点。你不会像纯粹的回避型那样冷漠和疏离，也不会像纯粹的安全型那样过于依赖和粘人。和你在一起，伴侣会感到轻松和自在，因为你不会要求他们时刻陪伴，也不会对他们的生活指手画脚。你是一个很好的伴侣，因为你能给对方足够的空间，也能在需要时提供支持。</p>
+
+          <h4>关系中的挑战</h4>
+          <p>你的伴侣可能会觉得你“不够爱”，因为你总是在关系最热烈的时候选择冷却。他们会觉得，你并不需要他们，也不在乎他们的感受。久而久之，他们会感到被拒绝和不被需要，最终选择离开。而你自己，也会因为这种“保持距离”的模式，错过很多深入连接的机会。</p>
+
+          <h4>给你的建议</h4>
+          <p>主动和伴侣沟通你的“空间需求”，让他们明白你的后退不是拒绝，而是自我调节。同时，也试着偶尔“放纵”一下，允许自己完全沉浸在爱里，不要总是想着保持距离。亲密并不意味着失去自由，而是找到一个可以安心停靠的港湾。当你允许自己依赖对方一点时，你会发现，爱并没有那么可怕，反而会让你变得更完整。</p>
+        `
+        break
+      case 'anxious_fearful':
+        interpretation = `
+          <h4>依恋特点</h4>
+          <p>你是焦虑型和恐惧型的混合体。你极度渴望爱，又极度害怕被爱。你会疯狂地追逐伴侣，用各种方式来吸引他们的注意，希望他们能看到你的存在，给你想要的安全感。但一旦对方回应你的爱意，向你靠近时，你又会因为恐惧而立刻逃跑。你会变得冷漠、疏离，甚至故意伤害对方，以此来测试他们的爱意，或者保护自己不被伤害。</p>
+
+          <h4>可能的成因</h4>
+          <p>你很可能经历过“爱与伤害”交织的关系。也许在你小时候，你的父母对你既宠爱又严厉，有时对你百般呵护，有时又对你拳打脚踢；也许你曾在一段关系中，既感受到了前所未有的甜蜜，又承受了刻骨铭心的背叛。这些经历让你对爱产生了既渴望又恐惧的复杂情感，你既想抓住爱，又怕被爱灼伤。</p>
+
+          <h4>你的优势</h4>
+          <p>你对情感的感知力极强，能深刻地理解人性的复杂。你拥有成为一个优秀的情感咨询师或艺术家的潜质，因为你能轻易地捕捉到他人内心的痛苦和挣扎，并用细腻的笔触去描绘它们。你是一个非常有深度的人，你的每一次痛苦和挣扎，都让你变得更加成熟和智慧。</p>
+
+          <h4>关系中的挑战</h4>
+          <p>你就像一个永远在追逐又永远在逃离的人。你会让伴侣感到精疲力竭，他们会觉得，无论他们怎么努力，都无法真正走进你的内心。当他们靠近时，你推开；当他们离开时，你又渴望他们回来。这种反复无常会耗尽他们的耐心和爱意，最终选择离开。而你自己，也会因为这种模式，永远无法建立一段稳定、健康的关系。</p>
+
+          <h4>给你的建议</h4>
+          <p>你需要的不是一段新的关系，而是一次深刻的自我疗愈。试着把注意力从“如何被爱”转向“如何自爱”，每天给自己一些时间，去拥抱那个受伤的内在小孩。告诉自己，你值得被爱，也有能力去爱。同时，也要学会识别自己的情绪模式，当你想要逃跑时，问问自己，你是真的害怕，还是在保护自己。记住，真正的强大不是隔绝世界，而是即使受过伤，依然选择相信爱。</p>
+        `
+        break
+      case 'avoidant_fearful':
+        interpretation = `
+          <h4>依恋特点</h4>
+          <p>你是回避型和恐惧型的混合体。你用冷漠和独立来掩盖内心深处对被抛弃的恐惧。你不相信有人会真的爱你，所以你先一步拒绝了所有人。你会刻意保持距离，用“我不需要你”来武装自己，以此来避免受到伤害。当伴侣向你靠近时，你会感到不安和恐惧，你会用各种方式把他们推开，比如冷战、消失或者直接说“我们分手吧”。</p>
+
+          <h4>可能的成因</h4>
+          <p>你可能在童年或过去的关系中，经历过被重要他人抛弃或背叛的创伤。也许在你小时候，你的父母突然离开了你，或者在你最需要他们的时候，他们选择了无视；也许你曾在一段关系中，付出了全部，却被对方无情地抛弃。这些经历让你对人性产生了深深的不信任，你相信，所有的爱最终都会消失，所有的人最终都会离开。</p>
+
+          <h4>你的优势</h4>
+          <p>你拥有极强的自我保护意识和生存能力，能在最孤独的时刻也保持清醒。你不会轻易相信别人，也不会轻易付出真心，这让你避免了很多不必要的伤害。你是一个非常独立、强大的人，即使没有任何人的支持，你也能把自己的生活过得很好。</p>
+
+          <h4>关系中的挑战</h4>
+          <p>你筑起的高墙，挡住了伤害，也挡住了爱。你会让伴侣感到被拒绝和不被需要，他们会觉得，无论他们怎么努力，都无法真正走进你的内心。久而久之，他们会选择离开，而你自己，也会因为这种“自我保护”的模式，错过很多深入连接的机会，最终孤独终老，却又抱怨无人懂你。</p>
+
+          <h4>给你的建议</h4>
+          <p>试着把你的墙拆成一道门，而不是一堵墙。允许少数几个你信任的人走进来，慢慢重建对关系的信任。同时，也要学会接纳自己的恐惧，告诉自己，害怕是正常的，但害怕不代表不能去爱。当你允许自己脆弱一点，允许自己依赖对方一点时，你会发现，爱并没有那么可怕，反而会让你变得更完整。记住，真正的强大不是隔绝世界，而是即使受过伤，依然选择相信爱。</p>
+        `
+        break
+      default:
+        interpretation = `
+          <h4>依恋特点</h4>
+          <p>你的依恋模式非常独特，不属于任何一种典型类型。你在关系中表现出复杂、多面的特质，既有安全型的稳定，也有焦虑型的敏感，还有回避型的独立。你能根据不同的情境和伴侣，调整自己的状态，有时会非常粘人，有时又会非常独立；有时会非常信任对方，有时又会非常多疑。</p>
+
+          <h4>可能的成因</h4>
+          <p>你的依恋模式是多种经历共同塑造的结果。你可能成长在一个复杂的家庭环境中，父母的情绪和行为不稳定；你可能经历过多次不同类型的关系，每一次都给你留下了不同的印记。这些经历让你形成了一种灵活、多变的依恋模式，你没有被任何一种类型所定义，而是成为了一个独一无二的个体。</p>
+
+          <h4>你的优势</h4>
+          <p>你拥有极强的适应能力和自我调节能力，能在不同的关系中展现出不同的面貌。你不会被任何一种刻板印象所束缚，你能根据自己的需求和感受，自由地选择如何去爱和被爱。你是一个非常有魅力的人，因为你的复杂和多面，总能给人带来惊喜。</p>
+
+          <h4>关系中的挑战</h4>
+          <p>你可能会让伴侣感到困惑，因为他们很难预测你的反应。他们会觉得，你就像一个谜，永远猜不透你的心思。当他们以为你很粘人时，你突然变得独立；当他们以为你很独立时，你又突然变得粘人。这种不确定性会让他们感到不安，也会让你自己感到疲惫。</p>
+
+          <h4>给你的建议</h4>
+          <p>拥抱你的独特性，不必强迫自己符合某种标准。找到最适合自己的相处方式，你就是最好的爱人。同时，也要学会更清晰地表达自己的需求和感受，让伴侣知道，你虽然复杂，但依然渴望被理解和被爱。记住，你的依恋模式不是你的缺陷，而是你的独特之处，它让你成为了那个独一无二的你。</p>
+        `
+    }
+
+    return interpretation
+  }
+
+  function restart() {
+    answers = Array(total).fill(null)
+    resultEl.style.display = 'none'
+    btnNext.classList.remove('show')
+    userPoint.style.display = 'none'
+
+    // 恢复测试页面元素
+    progressText.style.display = 'block'
+    progressFill.parentElement.style.display = 'block'
+    mainTitle.style.display = 'block'
+    mainSubtitle.style.display = 'block'
+
+    showQuestion(0)
+  }
+
+  showQuestion(0)
+</script>
+</body>
+</html>
